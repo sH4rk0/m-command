@@ -1,3 +1,4 @@
+
 interface AsteroidConfig {
   scene: Phaser.Scene;
   x: number;
@@ -5,16 +6,48 @@ interface AsteroidConfig {
   key: string;
   options: AsteroidConfigOptions;
 }
-
 interface AsteroidConfigOptions {
   speed: number;
+}
+
+interface UfoConfig {
+  scene: Phaser.Scene;
+  x: number;
+  y: number;
+  key: string;
+  options:UfoConfigOptions;
+}
+
+
+interface itemData{
+  t:number;//type 0=asteroid, 1=ufo
+  d:number;//delay
+  s?:boolean;//special
+  x?:number;// start x
+  y?:number;// start y
+  v?:number;// velocity
+}
+
+interface UfoConfigOptions {
+  speed: number;
+}
+
+interface levelStatusStore{
+  level:number;
+  energy:number;
+  missileSimple:number;
+  missileShockwave:number;
+  missilePerforant:number;
+  score:number;
 }
 
 interface level {
   level: string;
   title: string;
   type: number;
+  rockets:{s:number;p:number;sw:number;}
   time?: number;
+  sequence:[itemData];
   asteroids?: {
     quantity: number;
     spawn?: { min: number; max: number };

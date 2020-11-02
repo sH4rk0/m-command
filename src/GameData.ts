@@ -4,26 +4,31 @@ export let GameData: any = {
       level: "SWARM 1",
       title: "Destoy the asteroids!",
       type: 0,
+      rockets:{s:5,p:0,sw:0},
       asteroids: {
-        quantity: 100,
+        quantity: 2,
         speed: { min: 70, max: 60 },
         spawn: { min: 3000, max: 4000 }
-      }
+      },
+      sequence:[{t:0,d:1000},{t:1,d:5000},{t:0}]
     },
     {
       level: "SWARM 2",
       title: "Destoy all the asteroids!",
       type: 0,
+      rockets:{s:3,p:0,sw:0},
       asteroids: {
         quantity: 5,
         speed: { min: 70, max: 80 },
         spawn: { min: 1000, max: 2000 }
-      }
+      },
+      sequence:[{t:0,d:0},{t:0,d:0},{t:0,d:0},{t:0,d:0},{t:0,d:0}]
     },
     {
       level: "SWARM 3",
       title: "Destoy all the asteroids!",
       type: 0,
+      rockets:{s:5,p:0,sw:1},
       asteroids: {
         quantity: 7,
         speed: { min: 80, max: 90 },
@@ -35,6 +40,7 @@ export let GameData: any = {
       level: "SWARM 4",
       title: "Destoy all the asteroids!",
       type: 0,
+      rockets:{s:5,p:1,sw:0},
       asteroids: {
         quantity: 7,
         speed: { min: 80, max: 90 },
@@ -51,6 +57,13 @@ export let GameData: any = {
       width: 64,
       height: 64,
       spacing: 25
+    },
+    {
+      name: "ufo",
+      path: "assets/images/game/ufo.png",
+      width: 28,
+      height: 29,
+      frames: 16
     },
     {
       name: "asteroid-0",
@@ -89,7 +102,14 @@ export let GameData: any = {
     },
     {
       name: "asteroid-emitter",
-      path: "assets/images/game/asteroid-emitter.png",
+      path: "assets/images/game/asteroids-emitter.png",
+      width: 128,
+      height: 128,
+      frames: 6
+    },
+    {
+      name: "ufo-emitter",
+      path: "assets/images/game/ufo-emitter.png",
       width: 128,
       height: 128,
       frames: 6

@@ -4,6 +4,7 @@ import Asteroid from "../gameObjects/Asteroid";
 import MissileSimple from "../gameObjects/MissileSimple";
 import MissilePerforant from "../gameObjects/MissilePerforant";
 import Explosion from "../gameObjects/Explosion";
+import Ufo from "../gameObjects/Ufo";
 
 export default class Game extends Phaser.Scene {
   public _earth: Earth;
@@ -14,6 +15,7 @@ export default class Game extends Phaser.Scene {
   private _asteroidParticle: Phaser.GameObjects.Particles.ParticleEmitterManager;
   private _missileParticle: Phaser.GameObjects.Particles.ParticleEmitterManager;
   private _earthParticle: Phaser.GameObjects.Particles.ParticleEmitterManager;
+  private _ufoParticle: Phaser.GameObjects.Particles.ParticleEmitterManager;
 
   private _isGameOver: boolean = false;
 
@@ -79,6 +81,10 @@ export default class Game extends Phaser.Scene {
       .particles("asteroid-emitter")
       .setDepth(30);
 
+      this._ufoParticle = this.add
+      .particles("ufo-emitter")
+      .setDepth(30);
+
     this._earthParticle = this.add.particles("spark");
     this._earthParticle.createEmitter({
       angle: { min: 0, max: 360, steps: 128 },
@@ -118,6 +124,81 @@ export default class Game extends Phaser.Scene {
     });
 
     this._asteroidParticle.createEmitter({
+      frame: 5,
+      lifespan: 200,
+      scale: { start: 2, end: 0 },
+      rotate: { start: 0, end: 180 },
+      alpha: { start: 0.8, end: 0 },
+      on: false
+    });
+
+    this._ufoParticle.createEmitter({
+      frame: 0,
+      angle: { min: 0, max: 360 },
+      speed: { min: 10, max: 30 },
+      quantity: 1,
+      lifespan: 2000,
+      alpha: { start: 1, end: 0 },
+      scale: { start: 0.1, end: 0.4 },
+      on: false
+    });
+
+    this._ufoParticle.createEmitter({
+      frame: 1,
+      angle: { min: 0, max: 360 },
+      speed: { min: 30, max: 60 },
+      quantity: 1,
+      lifespan: 3000,
+      alpha: { start: 1, end: 0 },
+      scale: 2,
+      // scale: { start: 0.05, end: 0.5 },
+      rotate: { start: 0, end: 360 },
+      gravityY: 0,
+      on: false
+    });
+
+    this._ufoParticle.createEmitter({
+      frame: 2,
+      angle: { min: 0, max: 360 },
+      speed: { min: 30, max: 60 },
+      quantity: 1,
+      lifespan: 3000,
+      alpha: { start: 1, end: 0 },
+      scale: 2,
+      // scale: { start: 0.05, end: 0.5 },
+      rotate: { start: 0, end: 360 },
+      gravityY: 0,
+      on: false
+    });
+    this._ufoParticle.createEmitter({
+      frame: 3,
+      angle: { min: 0, max: 360 },
+      speed: { min: 30, max: 60 },
+      quantity: 1,
+      lifespan: 3000,
+      alpha: { start: 1, end: 0 },
+      scale: 2,
+      // scale: { start: 0.05, end: 0.5 },
+      rotate: { start: 0, end: 360 },
+      gravityY: 0,
+      on: false
+    });
+
+    this._ufoParticle.createEmitter({
+      frame: 4,
+      angle: { min: 0, max: 360 },
+      speed: { min: 30, max: 60 },
+      quantity: 2,
+      lifespan: 3000,
+      alpha: { start: 1, end: 0 },
+      scale: 2,
+      // scale: { start: 0.05, end: 0.5 },
+      rotate: { start: 0, end: 360 },
+      gravityY: 0,
+      on: false
+    });
+
+    this._ufoParticle.createEmitter({
       frame: 5,
       lifespan: 200,
       scale: { start: 2, end: 0 },
@@ -173,7 +254,7 @@ export default class Game extends Phaser.Scene {
     this.cameras.main.on(
       "cameraflashstart",
       (cam: any, fx: any, duration: any) => {
-        console.log("event");
+        //console.log("event");
         this._earth.destroy();
       }
     );
@@ -267,6 +348,17 @@ export default class Game extends Phaser.Scene {
     });
   }
 
+  
+  createUfo(options: UfoConfigOptions): void {
+    new Ufo({
+      scene: this,
+      x: 0,
+      y: 0,
+      key: "",
+      options: options
+    });
+  }
+
   collide(_obj1: any, _obj2: any): void {
     this._asteroidParticle.emitParticleAt(_obj1.x, _obj1.y);
     this.playExplosion();
@@ -275,17 +367,30 @@ export default class Game extends Phaser.Scene {
   }
 
   missileCollide(_obj1: any, _obj2: any): void {
-    this._asteroidParticle.emitParticleAt(_obj1.x, _obj1.y);
 
-    this.playExplosion();
-    this.events.emit("updateScore", [_obj1.getScore()]);
+    let _isAsteroid:boolean=false;
 
-    if (!_obj2.isPerforant()) {
-      this._missileParticle.emitParticleAt(_obj2.x, _obj2.y);
-      _obj2.remove();
-    }
+    if(_obj1.name==="asteroid") _isAsteroid=true;
 
-    _obj1.destroy();
+  
+      if(_isAsteroid){
+       
+        this._asteroidParticle.emitParticleAt(_obj1.x, _obj1.y);
+      }else{
+        
+        this._ufoParticle.emitParticleAt(_obj1.x, _obj1.y);
+      }
+
+      this.playExplosion();
+      this.events.emit("updateScore", [_obj1.getScore(),_isAsteroid]);
+  
+      if (!_obj2.isPerforant()) {
+        this._missileParticle.emitParticleAt(_obj2.x, _obj2.y);
+        _obj2.remove();
+      }
+      _obj1.destroy();
+    
+   
   }
 
   getRndX(): number {

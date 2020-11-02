@@ -78,7 +78,7 @@ export default class MissileSimple extends Phaser.Physics.Arcade.Sprite {
   }
 
   remove() {
-    console.log("remove");
+    //console.log("remove");
     this._emitter.stop();
     this.destroy();
     this._launchSound.destroy();

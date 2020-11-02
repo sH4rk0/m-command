@@ -23,6 +23,8 @@ export default class Intro extends Phaser.Scene {
   }
 
   create() {
+   
+    if (leaderboard != undefined)
     this._highscores = leaderboard.getHighscores();
     this._status = 0;
     this._bg2 = this.add.tileSprite(0, 0, 1280, 800, "bg").setOrigin(0);
@@ -97,6 +99,9 @@ export default class Intro extends Phaser.Scene {
       .setAlpha(0)
       .setFontSize(30);
 
+
+    this.checkLevel();
+
     this._bg = this.add
       .image(0, 0, "intro-bg")
       .setOrigin(0)
@@ -117,6 +122,8 @@ export default class Intro extends Phaser.Scene {
       this.scene.bringToTop("Hud");
     });
 
+
+    
     this.introAnimStart();
   }
 
@@ -127,6 +134,16 @@ export default class Intro extends Phaser.Scene {
     if ((score + "").length == 4) return score + " ";
     if ((score + "").length == 5) return score + "";
     if ((score + "").length == 6) return score + "";
+  }
+
+  checkLevel(){
+
+    if(this.registry.get("m-command-game-status")!=null){
+      this._introText.setText("Continue game");
+    }else{
+      this._introText.setText("Start game");
+    }
+
   }
 
   startChange() {

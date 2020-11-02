@@ -4,18 +4,16 @@
  * @description  Run4Mayor
  * @license      zero89
  */
-
+import { leaderboard } from "../InitGame";
 import { GameData } from "../GameData";
-//import { modalPrompt } from "../InitGame";
-//import { swEnabled } from "../InitGame";
 
 export default class Preloader extends Phaser.Scene {
-  body: HTMLElement;
-  loading: Phaser.GameObjects.Text;
-  text: Phaser.GameObjects.Text;
-  progress: Phaser.GameObjects.Graphics;
-
-  _bg: Phaser.GameObjects.TileSprite;
+  private _body: HTMLElement;
+  private _loading: Phaser.GameObjects.Text;
+  private _text: Phaser.GameObjects.Text;
+  private _progress: Phaser.GameObjects.Graphics;
+  private _bg: Phaser.GameObjects.TileSprite;
+  private _leaderboardIsActive: boolean;
 
   constructor() {
     super({
@@ -25,7 +23,7 @@ export default class Preloader extends Phaser.Scene {
 
   preload() {
     //console.log('Preloader:preload')
-    this.progress = this.add.graphics();
+    this._progress = this.add.graphics();
     this.loadAssets();
   }
 
@@ -34,7 +32,7 @@ export default class Preloader extends Phaser.Scene {
   }
 
   init() {
-    this.body = document.getElementsByTagName("body")[0];
+    this._body = document.getElementsByTagName("body")[0];
     this._bg = this.add.tileSprite(0, 0, 1280, 800, "loading-bg").setOrigin(0);
 
     /*let particles = this.add.particles("spark");
@@ -141,7 +139,7 @@ export default class Preloader extends Phaser.Scene {
       wordWrapWidth: 1000
     };
 
-    this.loading = this.add
+    this._loading = this.add
       .text(this.game.canvas.width / 2, 720, "", _config)
       .setStroke("#000000", 10)
       .setAlpha(1)
@@ -151,8 +149,51 @@ export default class Preloader extends Phaser.Scene {
       .setOrigin(0.5);
   }
 
+  
+ checkLeaderboard(){
+
+
+  if (leaderboard != undefined && leaderboard.getHighscores().length>0 && !this._leaderboardIsActive){
+
+    this._leaderboardIsActive=true;
+
+
+    this.tweens.add({
+      targets: [this._text],
+      alpha: 1,
+      x: 20,
+      duration: 250,
+      ease: "Sine.easeOut",
+      delay: 200
+    });
+    this._loading.setText("Tap/click to start");
+    this._body.className = "";
+    this._progress.clear();
+
+    this.input.once("pointerdown", () => {
+      this.registry.set("m-command-game-status", null);
+
+      let _dataStorage=localStorage.getItem("m-command-game-status");
+      if(_dataStorage!=null){
+        this.registry.set("m-command-game-status", _dataStorage);
+      }
+
+      this.scene.start("Intro");
+      //this.scene.start("ScoreInput");
+      //this.scene.start("GameOver");
+    });
+    
+  
+  }
+
+  
+
+
+ }
+
+
   loadAssets(): void {
-    this.body.className = "loading";
+    this._body.className = "loading";
 
     this.load.on("start", () => {});
 
@@ -161,42 +202,16 @@ export default class Preloader extends Phaser.Scene {
     });
 
     this.load.on("progress", (value: any) => {
-      this.progress.clear();
-      this.progress.fillStyle(0xffffff, 1);
-      this.progress.fillRect(0, 700, 1280 * value, 40);
-
-      this.loading.setText("Loading..." + Math.round(value * 100) + "%");
+      this._progress.clear();
+      this._progress.fillStyle(0xffffff, 1);
+      this._progress.fillRect(0, 700, 1280 * value, 40);
+      this._loading.setText("Loading..." + Math.round(value * 100) + "%");
     });
 
     this.load.on("complete", () => {
-      this.tweens.add({
-        targets: [this.text],
-        alpha: 1,
-        x: 20,
-        duration: 250,
-        ease: "Sine.easeOut",
-        delay: 200
-      });
-      this.loading.setText("Tap/click to start");
-      this.body.className = "";
-      this.progress.clear();
 
-      /*if (this.sys.game.device.input.touch) {
-        //@ts-ignore
-        //console.log("swEnabled", swEnabled);
-        //@ts-ignore
-        if (swEnabled && modalPrompt != null) {
-          //console.log("show modal");
-          modalPrompt.classList.add("show");
-        }
-      }*/
-
-      this.input.once("pointerdown", () => {
-        this.registry.set("score", 0);
-        this.scene.start("Intro");
-        //this.scene.start("ScoreInput");
-        //this.scene.start("GameOver");
-      });
+      this.time.addEvent({delay:500,callback:this.checkLeaderboard,callbackScope:this,repeat:-1})
+    
     });
 
     //Assets Load

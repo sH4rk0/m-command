@@ -16,10 +16,9 @@ export default class Asteroid extends Phaser.Physics.Arcade.Sprite {
   create() {
     this._config.scene.physics.world.enable(this);
     this._asteroid = Phaser.Math.RND.integerInRange(0, 3);
-
-    this.setCircle(this._sizes[this._asteroid]).setTexture(
+    this.setCircle(this._sizes[this._asteroid]-10,10,10).setTexture(
       "asteroid-" + this._asteroid
-    );
+    ).setDepth(10).setName("asteroid")
 
     this._gameplay = <Game>this._config.scene;
     let _frameArr: Array<number> = [];

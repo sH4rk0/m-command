@@ -15,9 +15,21 @@ export default class HUD extends Phaser.Scene {
   private _scoreValue: number;
   private _spawn: number;
   private _hits: number;
+  private _totalHits: number;
+  
   private _asteroids: number;
   private _asteroidsMax: number;
   private _rockets: number;
+
+  private _missileSimpleQuantity:number;
+  private _missileShockwaveQuantity:number;
+  private _missilePerforantQuantity:number;
+
+  private _missileSimpleQuantityText:Phaser.GameObjects.BitmapText;
+  private _missileShockwaveQuantityText:Phaser.GameObjects.BitmapText;
+  private _missilePerforantQuantityText:Phaser.GameObjects.BitmapText;
+
+  private _energy:number;
 
   private _spawnMin: number;
   private _spawnMax: number;
@@ -25,6 +37,9 @@ export default class HUD extends Phaser.Scene {
   private _speedMax: number;
 
   private _rocketSelector: number;
+
+  private _levelStatusStore: levelStatusStore;
+
   private _updateScore: Phaser.Events.EventEmitter;
 
   private _wave: Phaser.GameObjects.BitmapText;
@@ -32,8 +47,15 @@ export default class HUD extends Phaser.Scene {
   private _completedText: Phaser.GameObjects.BitmapText;
   private _completedSummary: Phaser.GameObjects.BitmapText;
 
+  private _levelContainer: Phaser.GameObjects.Container;
+
+  private _continue: Phaser.GameObjects.BitmapText;
+  private _retry: Phaser.GameObjects.BitmapText;
+
   private _cursor: Phaser.GameObjects.Image;
   private _launchers: Array<boolean>;
+  private _stopNext:boolean=false;
+  private _currentSequence:number=0;
 
   constructor() {
     super({
@@ -45,6 +67,16 @@ export default class HUD extends Phaser.Scene {
 
   create(): void {
     console.log("create hud");
+
+
+    
+
+
+    this._missilePerforantQuantity=0;
+    this._missileShockwaveQuantity=0;
+    this._missileSimpleQuantity=0;
+    this._energy=0;
+    this._scoreValue=0;
 
     this._launchers = [true, true, true];
 
@@ -124,8 +156,20 @@ export default class HUD extends Phaser.Scene {
     this._scoreText = this.add
       .bitmapText(10, 10, "arcade", "0")
       .setFontSize(30);
-    this._scoreValue = 0;
+
+
+      this._missilePerforantQuantityText = this.add
+      .bitmapText(1120, 10, "arcade", this._missilePerforantQuantity+"")
+      .setFontSize(10).setOrigin(.5);
+      this._missileShockwaveQuantityText = this.add
+      .bitmapText(1200, 10, "arcade", this._missileShockwaveQuantity+"")
+      .setFontSize(10).setOrigin(.5);
+      this._missileSimpleQuantityText = this.add
+      .bitmapText(1040, 10, "arcade", this._missileSimpleQuantity+"")
+      .setFontSize(10).setOrigin(.5);
+    
     this._hits = 0;
+    this._totalHits=0;
     this._rocketSelector = 0;
     this._levelStarted = false;
     this._levelCompleted = false;
@@ -152,9 +196,11 @@ export default class HUD extends Phaser.Scene {
       this.setRocket(0);
     });
     this.input.keyboard.on("keydown-S", (event: Event) => {
+      if(this._missilePerforantQuantity==0) return;
       this.setRocket(1);
     });
     this.input.keyboard.on("keydown-D", (event: Event) => {
+      if(this._missileShockwaveQuantity==0) return;
       this.setRocket(2);
     });
 
@@ -183,27 +229,104 @@ export default class HUD extends Phaser.Scene {
         this.pauseGame();
       }
     });
+    
+
+    this._continue = this.add
+    .bitmapText(440, 600, "carrier", "Continue")
+    .setTint(0x02af02)
+    .setOrigin(0.5)
+    .setAlpha(0)
+    .setFontSize(30)
+    .setInteractive()
+    
+    .on("pointerover", () => {
+      this._continue.setTint(0x00ff00);
+      //this.sound.add("charge").play({ volume: 1 });
+    })
+    .on("pointerout", () => {
+      this._continue.setTint(0x02af02);
+    })
+    .on(
+      "pointerdown",
+      (
+        pointer: Phaser.Input.Pointer,
+        localX: number,
+        localY: number,
+        e: Phaser.Types.Input.EventData
+      ) => {
+        //this._currentLevelIndex += 1;
+        //console.log("continue", this._currentLevelIndex);
+        this.tweens.add({targets:this._levelContainer,alpha:0,duration:500,onComplete:()=>{
+          this.setUpLevel();
+        }})
+      
+        e.stopPropagation();
+      }
+    );
+
+  this._retry = this.add
+    .bitmapText(840, 600, "carrier", "Retry")
+    .setTint(0xcb6902)
+    .setOrigin(0.5)
+    .setAlpha(0)
+    .setFontSize(30)
+    .setInteractive()
+    
+    .on("pointerover", () => {
+      this._retry.setTint(0xff8200);
+     // this.sound.add("charge").play({ volume: 1 });
+    })
+    .on("pointerout", () => {
+      this._retry.setTint(0xcb6902);
+    })
+    .on(
+      "pointerdown",
+      (
+        pointer: Phaser.Input.Pointer,
+        localX: number,
+        localY: number,
+        e: Phaser.Types.Input.EventData
+      ) => {
+     
+
+       this.tweens.add({targets:this._levelContainer,alpha:0,duration:500,onComplete:()=>{
+         this.restartLevelValues();
+        this.setUpLevel();
+      }})
+       
+        e.stopPropagation();
+      }
+    );
+
 
     this.input.on("pointerdown", (pointer: Phaser.Input.Pointer) => {
       if (this._levelStarted && !this._levelCompleted) {
         this._rockets += 1;
         switch (this._rocketSelector) {
           case 0:
-            if (this.isLaucherReady(0)) {
+            if (this.isLaucherReady(0) && this._missileSimpleQuantity>0) {
+              this._missileSimpleQuantity-=1;
+              this._missileSimpleQuantityText.setText( this._missileSimpleQuantity+"");
+             
               this.disableLauncher(0);
               this._gamePlay.launchMissile(pointer);
             }
             break;
 
           case 1:
-            if (this.isLaucherReady(1)) {
+            if (this.isLaucherReady(1) && this._missilePerforantQuantity>0) {
+              this._missilePerforantQuantity-=1;
+              this._missilePerforantQuantityText.setText( this._missilePerforantQuantity+"");
+
               this.disableLauncher(1);
               this._gamePlay.launchPerforant(pointer);
             }
             break;
 
           case 2:
-            if (this.isLaucherReady(2)) {
+            if (this.isLaucherReady(2) && this._missileShockwaveQuantity>0) {
+              this._missileShockwaveQuantity-=1;
+              this._missileShockwaveQuantityText.setText( this._missileShockwaveQuantity+"");
               this.disableLauncher(2);
               this._gamePlay.launchShockwave(pointer);
             }
@@ -241,7 +364,15 @@ export default class HUD extends Phaser.Scene {
       .setAlpha(0)
       .setFontSize(30);
 
+
+
+      this._levelContainer=this.add.container(0,0)
+
+      this._levelContainer.add([this._completedText,this._completedSummary,this._continue,this._retry])
+
+    
     this.setUpLevel();
+
   }
 
   disableLauncher(index: number): void {
@@ -261,6 +392,30 @@ export default class HUD extends Phaser.Scene {
   isLaucherReady(index: number): boolean {
     return this._launchers[index];
   }
+
+  storeStartLevelValues():void{
+
+    this._levelStatusStore={level:this._currentLevelIndex,missilePerforant:this._missilePerforantQuantity,missileShockwave:this._missileShockwaveQuantity,missileSimple:this._missileSimpleQuantity,energy:0,score:this._scoreValue}
+    localStorage.setItem("m-command-game-status",JSON.stringify(this._levelStatusStore));
+
+   // console.log(_levelValues)
+
+  }
+
+  restartLevelValues():void{
+
+    this._currentLevelIndex=this._levelStatusStore.level;
+    this._missilePerforantQuantity=this._levelStatusStore.missilePerforant;
+    this._missileShockwaveQuantity=this._levelStatusStore.missileShockwave;
+    this._missileSimpleQuantity=this._levelStatusStore.missileSimple;
+    this.updateRocketsValues();
+    this._scoreValue=this._levelStatusStore.score;
+    this._scoreText.setText(this._scoreValue+"");
+    this._energy=this._levelStatusStore.energy;
+
+  }
+
+  
 
   setRocket(index: number): void {
     switch (index) {
@@ -283,9 +438,19 @@ export default class HUD extends Phaser.Scene {
 
   update(time: number, delta: number) {
     if (this._levelStarted) {
+
+      if (this._hits == this._asteroidsMax) {
+        this._levelCompleted = true;
+        this._levelStarted = false;
+        this._currentLevelIndex += 1;
+        this.levelCompleted();
+      } 
+
+      /*
+     
       switch (this._currentLevel.type) {
         case 0: //destry asteroids
-          //console.log(this._hits);
+         
           if (this._hits == this._asteroidsMax) {
             this._levelCompleted = true;
             this._levelStarted = false;
@@ -321,13 +486,90 @@ export default class HUD extends Phaser.Scene {
 
         case 1: //resist time
           break;
-      }
+      }*/
     }
+    
   }
 
-  private setUpLevel() {
-    console.log("setUpLevel", this._currentLevelIndex);
+  nextSequence(_delay:number){
+
+    if(this._stopNext) return;
+    this.time.addEvent({delay:_delay,callback:this.getSequence,callbackScope:this})
+
+  }
+
+  getSequence(){
+    if(this._stopNext) return;
+    let _nextitem:itemData = this._levels[this._currentLevelIndex].sequence[this._currentSequence];
+   
+    if(_nextitem!=undefined){
+      this._currentSequence++;
+
+      if(this._levels[this._currentLevelIndex].sequence[this._currentSequence]==undefined){
+       // console.log("last")
+        this.addItem(true,_nextitem);
+      }else{
+       // console.log("not last")
+        this.addItem(false,_nextitem);
+        this.nextSequence(_nextitem.d)
+      }
+
+    }
+  
+  }
+
+  addItem(_isLast:boolean,_itemData:itemData) {
+
+    let _type:number=_itemData.t;
+
+    switch(_type){
+
+      case 0:
+        this._gamePlay.createAsteroid({
+          speed: Phaser.Math.RND.integerInRange(
+            this._speedMin,
+            this._speedMax
+          )
+        });
+        break;
+
+        case 1:
+        this._gamePlay.createUfo({
+          speed: Phaser.Math.RND.integerInRange(
+            this._speedMin,
+            this._speedMax
+          )
+        });
+        break;
+
+
+    }
+   
+
+
+  } 
+
+  private updateRocketsValues():void{
+
+    this._missileSimpleQuantityText.setText( this._missileSimpleQuantity+"");
+    this._missileShockwaveQuantityText.setText( this._missileShockwaveQuantity+"");
+    this._missilePerforantQuantityText.setText( this._missilePerforantQuantity+"");
+  }
+
+  private setUpLevel():void {
+
+    //console.log("setUpLevel", this._currentLevelIndex);
+
+    this.storeStartLevelValues();
+    this._retry.removeInteractive();
+    this._continue.removeInteractive();
     this._currentLevel = this._levels[this._currentLevelIndex];
+    this._missileShockwaveQuantity+=this._currentLevel.rockets.sw;
+    this._missilePerforantQuantity+=this._currentLevel.rockets.p;
+    this._missileSimpleQuantity+=this._currentLevel.rockets.s;
+    this._currentSequence=0;
+    this.updateRocketsValues();
+
     this._hits = 0;
     this._asteroids = 0;
     this._levelCompleted = false;
@@ -385,8 +627,10 @@ export default class HUD extends Phaser.Scene {
               duration: 500,
               completeDelay: 1000,
               onComplete: () => {
-                console.log("start level");
+               // console.log("start level");
                 this._levelStarted = true;
+                this.nextSequence(0)
+                  
               }
             });
           }
@@ -396,16 +640,20 @@ export default class HUD extends Phaser.Scene {
   }
 
   levelCompleted() {
-    console.log("levelCompleted");
+
+    this._levelContainer.setAlpha(1);
+    this._gamePlay._asteroidGroup.clear(false,true);
+    this._retry.setInteractive().setAlpha(1);
+    this._continue.setInteractive().setAlpha(1);
     this._completedText.setAlpha(0);
     this._completedSummary
       .setText(
         "Missile launched: " +
           this._rockets +
-          "\n\nAsteroids hit: " +
-          this._hits +
+          "\n\nTargets hit: " +
+          this._totalHits +
           "\n\nHit ratio: " +
-          ((100 * this._hits) / this._rockets).toFixed(1) +
+          ((100 * this._totalHits) / this._rockets).toFixed(1) +
           "%"
       )
       .setAlpha(0);
@@ -420,14 +668,17 @@ export default class HUD extends Phaser.Scene {
           alpha: 1,
           completeDelay: 3000,
           onComplete: () => {
-            this._gamePlay.tweens.add({
+           
+           /* this._gamePlay.tweens.add({
               targets: [this._completedText, this._completedSummary],
               alpha: 0,
               duration: 500,
               onComplete: () => {
                 this.setUpLevel();
               }
-            });
+            });*/
+
+
           }
         });
       }
@@ -444,8 +695,9 @@ export default class HUD extends Phaser.Scene {
   }
 
   private updateScore(parameters: Array<any>): void {
-    console.log("updateScore");
-    this._hits += 1;
+    //console.log("updateScore");
+   if( parameters[1]) this._hits += 1;
+   this._totalHits+=1;
     this._scoreValue += parameters[0];
     this._scoreText.setText(this._scoreValue + "");
     this.registry.set("score", this._scoreValue);

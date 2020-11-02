@@ -26,11 +26,13 @@ window.addEventListener("load", () => {
     physics: {
       default: "arcade",
       arcade: {
-        debug: false
+        debug: true
       }
     }
   };
 
+
+  
   const game = new Phaser.Game(config);
 
   /*

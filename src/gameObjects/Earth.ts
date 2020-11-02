@@ -10,7 +10,7 @@ export default class Earth extends Phaser.Physics.Arcade.Sprite {
   create() {
     this._config.scene.physics.world.enable(this);
     this.setScale(0.5)
-      .setCircle(200)
+      .setCircle(160,40,40)
       .setDepth(9).setImmovable(true);
 
     this._config.scene.add.existing(this);
